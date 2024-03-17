@@ -1,0 +1,24 @@
+<!doctype html>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<head>
+  <title>Leah's Scheduler Guesser</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<h1>Leah's Work Scheduler Guesser (not including possible drop days)</h1>
+<form>
+  <label for="workday">Enter a scheduled day and which day of the shift that is:</label><br>
+  <input type="date" id="workday" name="workday">
+  <select id="dayofschedule" name="dayofschedule">
+    <option value="1">First day</option>
+    <option value="2">Second day</option>
+    <option value="3">Third day</option>
+    <option value="4">Fourth day</option>
+  </select>
+</form>
+
+<button id="calculate">Calculate</button>
+<script src="js/app.js"></script>
+<div id="results"></div>
+</body>
+</html>
