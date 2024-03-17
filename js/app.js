@@ -1,12 +1,16 @@
-document.addEventListener('DOMContentLoaded', function() {
-  document.getElementById('calculate').addEventListener('click', function() {
+document.addEventListener('DOMContentLoaded', function () {
+  document.getElementById('calculate').addEventListener('click', function () {
     var selectedDate = document.getElementById('workday').value;
     var selectedDayOfSchedule = document.getElementById('dayofschedule').value;
     let workingDays = getWorkingDays(selectedDate, selectedDayOfSchedule);
     var resultsDiv = document.getElementById('results');
-    var resultsText = workingDays.map(group => group.map(date => date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })).join('<br>')).join('<br><br>');
+    var resultsText = workingDays.map(group => group.map(date => date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })).join('<br>')).join('<br><br>');
     resultsDiv.innerHTML = "Leah will work on the following days: <br>" + resultsText;
-    document.body.appendChild(resultsDiv);
   });
 });
 
