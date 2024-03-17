@@ -19,6 +19,13 @@
   margin: 10px 0;
 }
 
+@media only screen and (max-width: 600px) {
+  button, select, input[type="date"] {
+    font-size: 1.25em; /* Increase font size */
+    padding: 5px; /* Add more padding */
+  }
+}
+
 html {
   color: #222;
   font-size: 1em;
