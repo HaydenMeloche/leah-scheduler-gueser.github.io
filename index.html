@@ -1,24 +1,265 @@
-<!doctype html>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!DOCTYPE html>
+<html>
 <head>
-  <title>Leah's Scheduler Guesser</title>
-  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .calendar {
+      margin-top: 20px;
+      border: 1px solid #ddd;
+      padding: 10px;
+      max-width: 800px;
+    }
+
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 1px;
+      background: #ddd;
+    }
+
+    .calendar-day {
+      padding: 10px;
+      text-align: center;
+      background: white;
+      min-height: 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+    }
+
+    .calendar-day.header {
+      font-weight: bold;
+      background: #f5f5f5;
+    }
+
+    .day-shift {
+      background: #fff56f;
+      font-weight: bold;
+    }
+
+    .night-shift {
+      background: #4d4e56;
+      color: white;
+      font-weight: bold;
+    }
+
+    .night-end {
+      position: relative;
+    }
+
+    .night-end::before {
+      content: "Night End (7:30am)";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: #252525;
+      color: white;
+      font-size: 0.7em;
+      padding: 2px;
+    }
+
+    .legend {
+      margin-top: 10px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .legend-color {
+      width: 20px;
+      height: 20px;
+      border: 1px solid #ddd;
+    }
+
+    .shift-time {
+      font-size: 0.8em;
+      margin-top: 2px;
+    }
+
+    button {
+      padding: 5px 10px;
+    }
+
+    .shift-details {
+      font-size: 0.75em;
+      margin-top: 2px;
+    }
+  </style>
 </head>
 <body>
-<h1>Leah's Work Scheduler Guesser (not including possible drop days)</h1>
-<form>
-  <label for="workday">Enter a scheduled day and which day of the shift that is:</label><br>
-  <input type="date" id="workday" name="workday">
-  <select id="dayofschedule" name="dayofschedule">
+<h1>Leah's Work Schedule</h1>
+
+<div>
+  <label for="workday">Enter scheduled day:</label>
+  <input type="date" id="workday">
+
+  <label for="dayofschedule">Which day of shift:</label>
+  <select id="dayofschedule">
     <option value="1">First day</option>
     <option value="2">Second day</option>
     <option value="3">Third day</option>
     <option value="4">Fourth day</option>
   </select>
-</form>
 
-<button id="calculate">Calculate</button>
-<script src="js/app.js"></script>
-<div id="results"></div>
+  <button id="calculate">Calculate</button>
+</div>
+
+<div class="calendar">
+  <div class="calendar-header">
+    <button onclick="prevMonth()">&lt;</button>
+    <h3 id="monthDisplay"></h3>
+    <button onclick="nextMonth()">&gt;</button>
+  </div>
+  <div class="calendar-grid" id="calendarDays">
+    <div class="calendar-day header">Sun</div>
+    <div class="calendar-day header">Mon</div>
+    <div class="calendar-day header">Tue</div>
+    <div class="calendar-day header">Wed</div>
+    <div class="calendar-day header">Thu</div>
+    <div class="calendar-day header">Fri</div>
+    <div class="calendar-day header">Sat</div>
+  </div>
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-color" style="background: #e1dcb9"></div>
+      <span>Day Shift (7:30am - 7:30pm)</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background: #4d4e56"></div>
+      <span>Night Shift Start (7:30pm)</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background: #252525"></div>
+      <span>Night Shift End (7:30am)</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentDate = new Date();
+  let workDays = new Map();
+  let nightEndDays = new Set();
+
+  function formatDate(date) {
+    return date.toLocaleDateString('en-CA');
+  }
+
+  function updateCalendar() {
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'];
+
+    document.getElementById('monthDisplay').textContent =
+      `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+
+    const calendar = document.getElementById('calendarDays');
+    const headers = Array.from(document.getElementsByClassName('header'));
+    calendar.innerHTML = '';
+    headers.forEach(header => calendar.appendChild(header));
+
+    const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+
+    for (let i = 0; i < firstDay.getDay(); i++) {
+      const emptyDay = document.createElement('div');
+      emptyDay.className = 'calendar-day';
+      calendar.appendChild(emptyDay);
+    }
+
+    for (let day = 1; day <= lastDay.getDate(); day++) {
+      const dayDiv = document.createElement('div');
+      dayDiv.className = 'calendar-day';
+
+      const currentDayDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+      const dateString = formatDate(currentDayDate);
+
+      if (workDays.has(dateString)) {
+        const shiftType = workDays.get(dateString);
+        if (shiftType === 'day') {
+          dayDiv.classList.add('day-shift');
+          dayDiv.innerHTML = `${day}<div class="shift-details">7:30a-7:30p</div>`;
+        } else {
+          dayDiv.classList.add('night-shift');
+          dayDiv.innerHTML = `${day}<div class="shift-details">7:30p-7:30a</div>`;
+        }
+      } else if (nightEndDays.has(dateString)) {
+        dayDiv.classList.add('night-end');
+      }
+
+      if (!nightEndDays.has(dateString) && !workDays.has(dateString)) {
+        dayDiv.textContent = day;
+      } else if (nightEndDays.has(dateString) && !workDays.has(dateString)) {
+        dayDiv.innerHTML = `${day}`;
+      }
+
+      calendar.appendChild(dayDiv);
+    }
+  }
+
+  function prevMonth() {
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    updateCalendar();
+  }
+
+  function nextMonth() {
+    currentDate.setMonth(currentDate.getMonth() + 1);
+    updateCalendar();
+  }
+
+  function getWorkingDays(lastWorkDay, dayOfSchedule) {
+    let date = new Date(lastWorkDay);
+    date.setDate(date.getDate() - dayOfSchedule + 2);
+    workDays.clear();
+    nightEndDays.clear();
+
+    let endDate = new Date(lastWorkDay);
+    endDate.setFullYear(endDate.getFullYear() + 1);
+
+    while (date <= endDate) {
+      for (let i = 0; i < 4; i++) {
+        if (date <= endDate) {
+          const shiftType = i < 2 ? 'day' : 'night';
+          workDays.set(formatDate(date), shiftType);
+
+          // If it's a night shift, add the next day as a night end
+          if (shiftType === 'night') {
+            const nextDay = new Date(date);
+            nextDay.setDate(nextDay.getDate() + 1);
+            nightEndDays.add(formatDate(nextDay));
+          }
+        }
+        date.setDate(date.getDate() + 1);
+      }
+      date.setDate(date.getDate() + 5);
+    }
+
+    updateCalendar();
+    return Array.from(workDays.keys());
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    updateCalendar();
+
+    document.getElementById('calculate').addEventListener('click', function() {
+      const selectedDate = document.getElementById('workday').value;
+      const selectedDay = document.getElementById('dayofschedule').value;
+      getWorkingDays(selectedDate, selectedDay);
+    });
+  });
+</script>
 </body>
 </html>
