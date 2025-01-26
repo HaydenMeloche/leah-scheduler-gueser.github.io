@@ -248,11 +248,39 @@
     }
 
     updateCalendar();
+    updateShareUrl();
     return Array.from(workDays.keys());
+  }
+
+  function updateShareUrl() {
+    const workday = document.getElementById('workday').value;
+    const dayofschedule = document.getElementById('dayofschedule').value;
+    const url = new URL(window.location.href);
+    url.searchParams.set('workday', workday);
+    url.searchParams.set('dayofschedule', dayofschedule);
+    // Update browser URL without reloading
+    window.history.pushState({}, '', url);
+  }
+
+  function loadFromUrlParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const workday = urlParams.get('workday');
+    const dayofschedule = urlParams.get('dayofschedule');
+
+    if (workday) {
+      document.getElementById('workday').value = workday;
+    }
+    if (dayofschedule) {
+      document.getElementById('dayofschedule').value = dayofschedule;
+    }
+    if (workday && dayofschedule) {
+      getWorkingDays(workday, dayofschedule);
+    }
   }
 
   document.addEventListener('DOMContentLoaded', function() {
     updateCalendar();
+    loadFromUrlParams();
 
     document.getElementById('calculate').addEventListener('click', function() {
       const selectedDate = document.getElementById('workday').value;
